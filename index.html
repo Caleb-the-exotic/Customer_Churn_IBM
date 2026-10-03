@@ -491,6 +491,142 @@
             </div>
           </div>
         </div>
+
+        <!-- System Architecture & Model Intelligence Metadata Container -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800 space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 gap-2">
+            <div class="flex items-center space-x-3">
+              <div class="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                <i data-lucide="cpu" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white">Machine Learning Specifications & Dataset Profile</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Technical breakdown of algorithms, datasets, targets, predictions, and dimensionality</p>
+              </div>
+            </div>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+              Phase 1 – Phase 4 Validated
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- 1. What Algorithms Were Used -->
+            <div class="rounded-xl p-4 bg-slate-50 border border-slate-200 dark:bg-slate-950/60 dark:border-slate-800 flex flex-col">
+              <div class="flex items-center space-x-2 text-blue-600 dark:text-blue-400 mb-2">
+                <i data-lucide="binary" class="w-4 h-4"></i>
+                <h4 class="text-xs font-bold uppercase tracking-wider">Algorithms Used</h4>
+              </div>
+              <ul class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 flex-1">
+                <li class="font-medium text-slate-900 dark:text-white flex items-center justify-between">
+                  <span>Random Forest</span>
+                  <span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 font-bold">99.35%</span>
+                </li>
+                <li class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                  <span>Decision Tree</span>
+                  <span>99.35%</span>
+                </li>
+                <li class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                  <span>Logistic Regression</span>
+                  <span>84.71%</span>
+                </li>
+                <li class="pt-1.5 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400">
+                  <strong>Linear Regression:</strong> Support Calls &rarr; Payment Delay ($R^2$, MAE/MSE) + Total Spend Regressor
+                </li>
+              </ul>
+            </div>
+
+            <!-- 2. What Dataset -->
+            <div class="rounded-xl p-4 bg-slate-50 border border-slate-200 dark:bg-slate-950/60 dark:border-slate-800 flex flex-col">
+              <div class="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400 mb-2">
+                <i data-lucide="database" class="w-4 h-4"></i>
+                <h4 class="text-xs font-bold uppercase tracking-wider">Dataset Used</h4>
+              </div>
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2 flex-1">
+                <div>
+                  <div class="font-semibold text-slate-900 dark:text-white">IBM Customer Churn</div>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400">Telecommunications behavioral records</div>
+                </div>
+                <div class="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px] space-y-1">
+                  <div><strong>Training Set:</strong> 440,833 records</div>
+                  <div><strong>Testing Set:</strong> 64,374 records</div>
+                  <div class="text-indigo-600 dark:text-indigo-400 font-bold pt-0.5 border-t border-slate-100 dark:border-slate-800">
+                    Master Consolidated: 442,211
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Predicted Values -->
+            <div class="rounded-xl p-4 bg-slate-50 border border-slate-200 dark:bg-slate-950/60 dark:border-slate-800 flex flex-col">
+              <div class="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400 mb-2">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <h4 class="text-xs font-bold uppercase tracking-wider">Predicted Values</h4>
+              </div>
+              <ul class="text-xs text-slate-600 dark:text-slate-300 space-y-2 flex-1">
+                <li class="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800">
+                  <div class="font-semibold text-slate-900 dark:text-white">Churn Probability</div>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Continuous score [0.0% – 100.0%]</div>
+                  <div class="flex gap-1 mt-1 text-[10px]">
+                    <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">0: Retained</span>
+                    <span class="px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300">1: Churned</span>
+                  </div>
+                </li>
+                <li class="text-[11px] text-slate-500 dark:text-slate-400">
+                  <strong>Secondary:</strong> Predicted Payment Delay (days) & Expected Lifetime Total Spend ($).
+                </li>
+              </ul>
+            </div>
+
+            <!-- 4. Targeted Values -->
+            <div class="rounded-xl p-4 bg-slate-50 border border-slate-200 dark:bg-slate-950/60 dark:border-slate-800 flex flex-col">
+              <div class="flex items-center space-x-2 text-amber-600 dark:text-amber-400 mb-2">
+                <i data-lucide="target" class="w-4 h-4"></i>
+                <h4 class="text-xs font-bold uppercase tracking-wider">Targeted Values</h4>
+              </div>
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2 flex-1">
+                <div class="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800">
+                  <div class="font-semibold text-slate-900 dark:text-white">Primary Target: <code class="text-blue-600 dark:text-blue-400">Churn</code></div>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 space-y-0.5">
+                    <div><strong>y = 0:</strong> Active / Retained Customer</div>
+                    <div><strong>y = 1:</strong> Discontinued / Churned Customer</div>
+                  </div>
+                </div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                  <strong>Regression Targets:</strong> <code class="text-purple-600 dark:text-purple-400">Payment Delay</code> and <code class="text-emerald-600 dark:text-emerald-400">Total Spend</code>.
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. Targeted Rows & Columns -->
+            <div class="rounded-xl p-4 bg-slate-50 border border-slate-200 dark:bg-slate-950/60 dark:border-slate-800 flex flex-col">
+              <div class="flex items-center space-x-2 text-violet-600 dark:text-violet-400 mb-2">
+                <i data-lucide="table" class="w-4 h-4"></i>
+                <h4 class="text-xs font-bold uppercase tracking-wider">Targeted Rows & Columns</h4>
+              </div>
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2 flex-1">
+                <div class="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px] space-y-1">
+                  <div class="flex justify-between">
+                    <span><strong>Total Rows:</strong></span>
+                    <span class="font-mono font-bold text-slate-900 dark:text-white">442,211</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span><strong>Benchmark Test:</strong></span>
+                    <span class="font-mono">64,374</span>
+                  </div>
+                  <div class="flex justify-between border-t border-slate-100 dark:border-slate-800 pt-1">
+                    <span><strong>Total Columns:</strong></span>
+                    <span class="font-mono font-bold text-slate-900 dark:text-white">12</span>
+                  </div>
+                </div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                  <strong>10 Predictors:</strong> Age, Gender, Tenure, Usage Freq, Support Calls, Payment Delay, Sub Type, Contract Length, Total Spend, Last Interaction.<br>
+                  <em>(CustomerID excluded)</em>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- ================= PAGE 2: PREDICT CHURN ================= -->
