@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Churn Prediction System — TeleSaaS Analytics</title>
+  <meta name="description" content="Production-ready customer churn intelligence platform powered by an optimized Random Forest machine learning classifier (99.35% accuracy).">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#F0F9FF',
+              100: '#E0F2FE',
+              500: '#0284C7',
+              600: '#0369A1',
+              700: '#075985',
+              800: '#0C4A6E',
+              900: '#082F49',
+              950: '#0A192F'
+            },
+            navy: {
+              800: '#1E293B',
+              900: '#0F172A',
+              950: '#020617'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Inter, Heebo & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Heebo:wght@700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <!-- Papa Parse CDN for CSV parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="h-full bg-slate-50 text-slate-800 antialiased flex overflow-hidden dark:bg-slate-950 dark:text-slate-100 relative">
+
+  <!-- Fixed Full-Screen Lightfall Canvas Container (consumes entire viewport) -->
+  <div id="lightfall-fullscreen-container" class="fixed inset-0 pointer-events-none" style="z-index: 0; width: 100vw; height: 100vh; overflow: hidden; display: block;"></div>
+
+  <!-- ================= Collapsible Sidebar ================= -->
+  <aside id="sidebar" class="w-64 bg-navy-950 text-slate-300 flex flex-col flex-shrink-0 border-r border-slate-800 transition-all duration-300 z-30">
+    <!-- Sidebar Header -->
+    <div class="h-16 px-4 flex items-center justify-between border-b border-slate-800/80 bg-slate-900/40">
+      <div class="flex items-center space-x-3 overflow-hidden">
+        <div class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 flex-shrink-0">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+        <div class="flex flex-col truncate">
+          <span class="font-bold text-white tracking-tight text-sm leading-tight">ChurnIntel AI</span>
+        </div>
+      </div>
+      <button id="sidebar-toggle-btn" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors focus:outline-none" title="Toggle Sidebar">
+        <i data-lucide="chevrons-left" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Navigation Links -->
+    <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+      <a href="#home" data-page="home" class="nav-link active flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all group">
+        <i data-lucide="home" class="nav-icon w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+        <span class="truncate">Home</span>
+      </a>
+
+      <a href="#overview" data-page="overview" class="nav-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all group">
+        <i data-lucide="layout-dashboard" class="nav-icon w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+        <span class="truncate">Overview</span>
+      </a>
+
+      <a href="#predict" data-page="predict" class="nav-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all group">
+        <i data-lucide="sparkles" class="nav-icon w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+        <span class="truncate">Predict Churn</span>
+        <span class="ml-auto px-1.5 py-0.5 text-[10px] font-semibold bg-blue-500/20 text-blue-400 rounded border border-blue-500/30">Live</span>
+      </a>
+
+      <a href="#explorer" data-page="explorer" class="nav-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all group">
+        <i data-lucide="users" class="nav-icon w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+        <span class="truncate">Customer Explorer</span>
+      </a>
+
+      <a href="#analytics" data-page="analytics" class="nav-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all group">
+        <i data-lucide="bar-chart-3" class="nav-icon w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+        <span class="truncate">Churn Analytics</span>
+      </a>
+
+      <a href="#performance" data-page="performance" class="nav-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all group">
+        <i data-lucide="award" class="nav-icon w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+        <span class="truncate">Model Performance</span>
+      </a>
+
+      <a href="#data" data-page="data" class="nav-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all group">
+        <i data-lucide="database" class="nav-icon w-4 h-4 mr-3 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+        <span class="truncate">Data Management</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- ================= Main Application Wrapper ================= -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+    <!-- Top Navigation Bar -->
+    <header class="h-16 bg-white border-b border-slate-200 px-4 md:px-6 flex items-center justify-between z-20 dark:bg-slate-900 dark:border-slate-800">
+      <div class="flex items-center space-x-3">
+        <button id="mobile-menu-btn" class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg md:hidden dark:text-slate-400 dark:hover:bg-slate-800">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <div>
+          <h1 id="page-title" class="text-lg font-bold text-slate-900 leading-tight dark:text-white">Home</h1>
+          <p id="page-subtitle" class="text-xs text-slate-500 dark:text-slate-400">Customer Churn Prediction Intelligence Platform</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <!-- Quick Demo Predict Button -->
+        <button id="top-quick-demo-btn" class="hidden lg:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors">
+          <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+          <span>Test Demo Customer</span>
+        </button>
+
+        <!-- Project Info Modal Trigger -->
+        <button id="project-info-btn" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800" title="Project Documentation">
+          <i data-lucide="info" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Theme Toggle Button -->
+        <button id="theme-toggle-btn" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800" title="Toggle Theme">
+          <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+          <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Scrollable Views Container -->
+    <main id="main-content" class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative z-10 transition-colors duration-200">
+
+      <!-- ================= PAGE 0: HOME ================= -->
+      <section id="view-home" class="page-view h-full flex flex-col justify-center" style="font-family: 'Heebo', sans-serif;">
+        <!-- Hero Section floating seamlessly over Full-Screen Lightfall -->
+        <div class="relative z-10 px-2 md:px-6 max-w-6xl mx-auto w-full">
+
+          <!-- Main Heading -->
+          <h1 class="text-white leading-tight mb-2.5 drop-shadow-md" style="font-size: clamp(2rem, 3.8vw, 3.2rem); font-weight: 900; letter-spacing: -0.02em; font-family: 'Heebo', sans-serif;">
+            Customer Churn
+            <span style="background: linear-gradient(90deg, #60a5fa, #c084fc, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"> Prediction</span>
+            <br>Intelligence Platform
+          </h1>
+
+          <!-- Sub heading -->
+          <p class="mb-5 max-w-2xl text-slate-200" style="font-size: 1rem; font-weight: 400; line-height: 1.6; text-shadow: 0 2px 8px rgba(0,0,0,0.4);">
+            A production-ready telecom churn analytics system built on a consolidated dataset of <strong class="text-blue-300 font-semibold">442,211 customer records</strong>. Predict, analyze, and retain customers before they leave — all powered by machine learning.
+          </p>
+
+          <!-- CTA Buttons -->
+          <div class="flex flex-wrap gap-3.5 mb-6">
+            <button id="home-go-predict-btn" class="flex items-center space-x-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-blue-600/40" style="background: linear-gradient(135deg, #2563eb, #7c3aed);">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              <span>Predict Churn Now</span>
+            </button>
+            <button id="home-go-overview-btn" class="flex items-center space-x-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95 shadow-md" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: white; backdrop-filter: blur(12px);">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+              <span>View Dashboard</span>
+            </button>
+          </div>
+
+          <!-- Stats row with ultra-modern glassmorphism -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            <div class="rounded-xl p-3.5 border transition-all hover:-translate-y-0.5 shadow-lg" style="background: rgba(15, 23, 42, 0.5); border-color: rgba(255,255,255,0.12); backdrop-filter: blur(14px);">
+              <div class="text-2xl font-black text-white mb-0.5" style="font-family: 'Heebo', sans-serif;">99.35%</div>
+              <div class="text-xs text-slate-300 font-medium">Model Accuracy</div>
+            </div>
+            <div class="rounded-xl p-3.5 border transition-all hover:-translate-y-0.5 shadow-lg" style="background: rgba(15, 23, 42, 0.5); border-color: rgba(255,255,255,0.12); backdrop-filter: blur(14px);">
+              <div class="text-2xl font-black text-white mb-0.5" style="font-family: 'Heebo', sans-serif;">442K</div>
+              <div class="text-xs text-slate-300 font-medium">Training Records</div>
+            </div>
+            <div class="rounded-xl p-3.5 border transition-all hover:-translate-y-0.5 shadow-lg" style="background: rgba(15, 23, 42, 0.5); border-color: rgba(255,255,255,0.12); backdrop-filter: blur(14px);">
+              <div class="text-2xl font-black text-white mb-0.5" style="font-family: 'Heebo', sans-serif;">47.4%</div>
+              <div class="text-xs text-slate-300 font-medium">Benchmark Churn Rate</div>
+            </div>
+            <div class="rounded-xl p-3.5 border transition-all hover:-translate-y-0.5 shadow-lg" style="background: rgba(15, 23, 42, 0.5); border-color: rgba(255,255,255,0.12); backdrop-filter: blur(14px);">
+              <div class="text-2xl font-black text-white mb-0.5" style="font-family: 'Heebo', sans-serif;">10</div>
+              <div class="text-xs text-slate-300 font-medium">Predictive Features</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PAGE 1: OVERVIEW DASHBOARD ================= -->
+      <section id="view-overview" class="page-view hidden space-y-6">
+        <!-- Dataset Context Banner -->
+        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-900 dark:border-slate-800">
+          <div class="flex items-start space-x-3">
+            <div class="p-2 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+              <i data-lucide="layers" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="font-semibold text-slate-900 dark:text-white text-sm" id="overview-context-title">Active Dataset: Testing Benchmark Dataset (Phase 2)</span>
+                <span class="px-2 py-0.5 text-[11px] font-semibold bg-slate-100 text-slate-700 rounded-full dark:bg-slate-800 dark:text-slate-300">Phase 2 Report Truth</span>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5" id="overview-context-desc">
+                Displaying official Phase 2 report figures (64,374 test customers). Upload a custom dataset in Data Management to analyze new live customer records.
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button id="overview-reset-benchmark-btn" class="px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+              Reset to Benchmark
+            </button>
+            <button id="overview-goto-upload-btn" class="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center space-x-1 shadow-sm">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+              <span>Upload New CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5 KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <!-- KPI 1: Total Customers -->
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800 transition-all hover:shadow-md">
+            <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium mb-2">
+              <span>Total Customers</span>
+              <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center dark:bg-blue-950/60 dark:text-blue-400">
+                <i data-lucide="users" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-slate-900 dark:text-white" id="kpi-total-customers">64,374</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center">
+              <span class="text-slate-600 dark:text-slate-300 font-medium mr-1" id="kpi-total-sub">64,374 records</span> evaluated
+            </div>
+          </div>
+
+          <!-- KPI 2: Churned Customers -->
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800 transition-all hover:shadow-md">
+            <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium mb-2">
+              <span>Churned Customers</span>
+              <div class="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center dark:bg-red-950/60 dark:text-red-400">
+                <i data-lucide="user-x" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-red-600 dark:text-red-400" id="kpi-churned-customers">30,493</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Discontinued subscription
+            </div>
+          </div>
+
+          <!-- KPI 3: Retained Customers -->
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800 transition-all hover:shadow-md">
+            <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium mb-2">
+              <span>Retained Customers</span>
+              <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center dark:bg-emerald-950/60 dark:text-emerald-400">
+                <i data-lucide="user-check" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400" id="kpi-retained-customers">33,881</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Active accounts retained
+            </div>
+          </div>
+
+          <!-- KPI 4: Overall Churn Rate -->
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800 transition-all hover:shadow-md">
+            <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium mb-2">
+              <span>Overall Churn Rate</span>
+              <div class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center dark:bg-amber-950/60 dark:text-amber-400">
+                <i data-lucide="percent" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-amber-600 dark:text-amber-400" id="kpi-churn-rate">47.37%</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Recorded dataset benchmark
+            </div>
+          </div>
+
+          <!-- KPI 5: High-Risk Customers -->
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800 transition-all hover:shadow-md">
+            <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium mb-2">
+              <span>High-Risk Accounts</span>
+              <div class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center dark:bg-purple-950/60 dark:text-purple-400">
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-purple-600 dark:text-purple-400" id="kpi-high-risk">30,493</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Predicted churn risk &ge; 50%
+            </div>
+          </div>
+        </div>
+
+        <!-- Key Insights Panel (Report Grounded) -->
+        <div class="bg-gradient-to-r from-slate-900 via-navy-900 to-slate-900 text-white rounded-xl p-5 border border-slate-800 shadow-md">
+          <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-3">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center border border-blue-500/30">
+                <i data-lucide="lightbulb" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-sm text-white">Project Analytical Insights & Feature Importances</h3>
+                <p class="text-xs text-slate-400">Reported findings from Phase 2 exploratory data analysis and Phase 3/4 Random Forest model evaluation</p>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider bg-blue-900/60 text-blue-300 rounded border border-blue-700/50">
+              Non-Causal Observations
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-3">
+            <div class="bg-slate-800/60 border border-slate-700/50 rounded-lg p-3">
+              <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                <span>Support Calls</span>
+                <span class="font-bold text-emerald-400">Rank #1</span>
+              </div>
+              <div class="text-xl font-bold text-white">32.7%</div>
+              <p class="text-[11px] text-slate-400 mt-1">Strongest reported feature importance. Customer complaints strongly correlate with churn intention.</p>
+            </div>
+
+            <div class="bg-slate-800/60 border border-slate-700/50 rounded-lg p-3">
+              <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                <span>Total Spend</span>
+                <span class="font-bold text-blue-400">Rank #2</span>
+              </div>
+              <div class="text-xl font-bold text-white">22.7%</div>
+              <p class="text-[11px] text-slate-400 mt-1">High financial commitment shows weak negative correlation with churn in Phase 2 EDA.</p>
+            </div>
+
+            <div class="bg-slate-800/60 border border-slate-700/50 rounded-lg p-3">
+              <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                <span>Customer Age</span>
+                <span class="font-bold text-amber-400">Rank #3</span>
+              </div>
+              <div class="text-xl font-bold text-white">14.9%</div>
+              <p class="text-[11px] text-slate-400 mt-1">Older customer demographics demonstrated elevated churn frequency in the dataset.</p>
+            </div>
+
+            <div class="bg-slate-800/60 border border-slate-700/50 rounded-lg p-3">
+              <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                <span>Payment Delay</span>
+                <span class="font-bold text-red-400">Rank #4</span>
+              </div>
+              <div class="text-xl font-bold text-white">14.2%</div>
+              <p class="text-[11px] text-slate-400 mt-1">Delays &gt; 15 days showed positive association with impending service cancellation.</p>
+            </div>
+          </div>
+          <div class="mt-3 text-[11px] text-slate-400 flex items-center space-x-1.5 italic">
+            <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0 text-slate-500"></i>
+            <span>Important statistical note: Feature importances reflect tree impurity reduction inside the trained Random Forest model and do not denote definitive causal relationships.</span>
+          </div>
+        </div>
+
+        <!-- Dashboard Charts Grid (Row 1) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Chart 1: Churned vs Retained (Doughnut) -->
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Customer Churn Breakdown</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Retained vs Churned proportions</p>
+              </div>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">Class Split</span>
+            </div>
+            <div class="relative flex-1 min-h-[240px] flex items-center justify-center">
+              <canvas id="chart-churn-doughnut"></canvas>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-center text-xs">
+              <div class="p-2 rounded bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300">
+                <span class="block font-bold text-sm" id="doughnut-retained-val">33,881 (52.6%)</span>
+                <span>Retained</span>
+              </div>
+              <div class="p-2 rounded bg-red-50 dark:bg-red-950/30 text-red-800 dark:text-red-300">
+                <span class="block font-bold text-sm" id="doughnut-churned-val">30,493 (47.4%)</span>
+                <span>Churned</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 2: Churn by Subscription Type -->
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Churn by Subscription Tier</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Basic, Standard and Premium</p>
+              </div>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">Tier Analysis</span>
+            </div>
+            <div class="relative flex-1 min-h-[240px]">
+              <canvas id="chart-sub-type"></canvas>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 text-center">Evenly distributed across tiers with comparable churn ratios.</p>
+          </div>
+
+          <!-- Chart 3: Churn by Contract Length -->
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Churn by Contract Term</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Monthly, Quarterly, Annual</p>
+              </div>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400">Contract Length</span>
+            </div>
+            <div class="relative flex-1 min-h-[240px]">
+              <canvas id="chart-contract-length"></canvas>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 text-center">Monthly contracts show the highest vulnerability to service cancellation.</p>
+          </div>
+        </div>
+
+        <!-- Dashboard Charts Grid (Row 2) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Chart 4: Customer Age Distribution -->
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Customer Age Distribution & Churn</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Age cohorts (18 to 65 years)</p>
+              </div>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">Demographics</span>
+            </div>
+            <div class="relative min-h-[260px]">
+              <canvas id="chart-age-dist"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 5: Total Spend by Churn Status -->
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Total Spend Distribution by Churn Status</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Monetary value buckets ($100 to $1,000)</p>
+              </div>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">Revenue Impact</span>
+            </div>
+            <div class="relative min-h-[260px]">
+              <canvas id="chart-spend-dist"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Charts Grid (Row 3: Correlation & Tenure) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Chart 6: Tenure vs Total Spend (2 cols) -->
+          <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Tenure vs Total Spend Relationship</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Cumulative customer value across subscription duration</p>
+              </div>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">Bivariate Trend</span>
+            </div>
+            <div class="relative min-h-[280px]">
+              <canvas id="chart-tenure-spend"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 7: Numerical Correlation Matrix (1 col) -->
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex flex-col">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Correlation Matrix</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Pairwise Pearson correlation</p>
+              </div>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">Heatmap</span>
+            </div>
+            <!-- Heatmap Container -->
+            <div class="flex-1 overflow-x-auto flex items-center justify-center">
+              <div id="overview-correlation-matrix" class="w-full text-xs font-mono">
+                <!-- Rendered dynamically via JS -->
+              </div>
+            </div>
+            <div class="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+              <span class="flex items-center"><span class="w-2.5 h-2.5 bg-blue-500 inline-block rounded mr-1"></span> Neg (-1.0)</span>
+              <span class="flex items-center"><span class="w-2.5 h-2.5 bg-slate-200 dark:bg-slate-700 inline-block rounded mr-1"></span> 0.0</span>
+              <span class="flex items-center"><span class="w-2.5 h-2.5 bg-red-500 inline-block rounded mr-1"></span> Pos (+1.0)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PAGE 2: PREDICT CHURN ================= -->
+      <section id="view-predict" class="page-view hidden space-y-6">
+        <!-- Header Info Card -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white">Single Customer Churn Risk Inference</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Submit the 10 customer features to query the trained Random Forest classifier. CustomerID is excluded as it is an identifier.
+            </p>
+          </div>
+
+          <!-- Demo Profiles Controls -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="btn-load-high-risk" class="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors flex items-center space-x-1.5 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900">
+              <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+              <span>Load High-Risk Demo</span>
+            </button>
+            <button id="btn-load-low-risk" class="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors flex items-center space-x-1.5 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+              <span>Load Low-Risk Demo</span>
+            </button>
+            <button id="btn-reset-form" class="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+              Reset Form
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Left Column: 10 Features Form (7 cols) -->
+          <div class="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center">
+              <i data-lucide="file-text" class="w-4 h-4 mr-2 text-blue-600"></i>
+              Customer Behavioral & Account Attributes
+            </h3>
+
+            <form id="churn-prediction-form" class="space-y-4">
+              <!-- Row 1: Age & Gender -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="inp-age" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Customer Age <span class="text-slate-400 font-normal">(18–65 years)</span>
+                  </label>
+                  <input type="number" id="inp-age" name="Age" min="18" max="100" value="42" required
+                         class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                  <span class="text-[10px] text-slate-500">Demographic predictor (14.9% importance)</span>
+                </div>
+                <div>
+                  <label for="inp-gender" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Gender
+                  </label>
+                  <select id="inp-gender" name="Gender" required
+                          class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                    <option value="Male" selected>Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                  <span class="text-[10px] text-slate-500">Encoded via trained LabelEncoder</span>
+                </div>
+              </div>
+
+              <!-- Row 2: Tenure & Usage Frequency -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="inp-tenure" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Tenure <span class="text-slate-400 font-normal">(1–60 months)</span>
+                  </label>
+                  <input type="number" id="inp-tenure" name="Tenure" min="1" max="100" value="31" required
+                         class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                  <span class="text-[10px] text-slate-500">Account longevity with the business</span>
+                </div>
+                <div>
+                  <label for="inp-usage" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Usage Frequency <span class="text-slate-400 font-normal">(1–30 times/mo)</span>
+                  </label>
+                  <input type="number" id="inp-usage" name="Usage Frequency" min="1" max="50" value="15" required
+                         class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                  <span class="text-[10px] text-slate-500">Product engagement level</span>
+                </div>
+              </div>
+
+              <!-- Row 3: Support Calls & Payment Delay -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="inp-support" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                    <span>Support Calls <span class="text-slate-400 font-normal">(0–10 calls)</span></span>
+                    <span class="text-[10px] text-blue-600 font-semibold dark:text-blue-400">32.7% Importance</span>
+                  </label>
+                  <input type="number" id="inp-support" name="Support Calls" min="0" max="20" value="5" required
+                         class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                  <span class="text-[10px] text-slate-500">Primary reported churn indicator</span>
+                </div>
+                <div>
+                  <label for="inp-delay" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                    <span>Payment Delay <span class="text-slate-400 font-normal">(0–30 days)</span></span>
+                    <span class="text-[10px] text-blue-600 font-semibold dark:text-blue-400">14.2% Importance</span>
+                  </label>
+                  <input type="number" id="inp-delay" name="Payment Delay" min="0" max="60" value="17" required
+                         class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                  <span class="text-[10px] text-slate-500">Invoice payment settlement delay</span>
+                </div>
+              </div>
+
+              <!-- Row 4: Subscription Type & Contract Length -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="inp-sub" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Subscription Type
+                  </label>
+                  <select id="inp-sub" name="Subscription Type" required
+                          class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                    <option value="Basic" selected>Basic</option>
+                    <option value="Standard">Standard</option>
+                    <option value="Premium">Premium</option>
+                  </select>
+                  <span class="text-[10px] text-slate-500">Service package tier</span>
+                </div>
+                <div>
+                  <label for="inp-contract" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Contract Length
+                  </label>
+                  <select id="inp-contract" name="Contract Length" required
+                          class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                    <option value="Monthly" selected>Monthly</option>
+                    <option value="Quarterly">Quarterly</option>
+                    <option value="Annual">Annual</option>
+                  </select>
+                  <span class="text-[10px] text-slate-500">Contract term commitment</span>
+                </div>
+              </div>
+
+              <!-- Row 5: Total Spend & Last Interaction -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="inp-spend" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                    <span>Total Spend <span class="text-slate-400 font-normal">($100–$1,000)</span></span>
+                    <span class="text-[10px] text-blue-600 font-semibold dark:text-blue-400">22.7% Importance</span>
+                  </label>
+                  <input type="number" id="inp-spend" name="Total Spend" min="50" max="5000" step="1" value="541" required
+                         class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                  <span class="text-[10px] text-slate-500">Monetary revenue contribution</span>
+                </div>
+                <div>
+                  <label for="inp-last-interaction" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Last Interaction <span class="text-slate-400 font-normal">(1–30 days ago)</span>
+                  </label>
+                  <input type="number" id="inp-last-interaction" name="Last Interaction" min="1" max="60" value="15" required
+                         class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                  <span class="text-[10px] text-slate-500">Days since touchpoint or login</span>
+                </div>
+              </div>
+
+              <!-- Form Submit CTA -->
+              <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <span class="text-xs text-slate-500 dark:text-slate-400 flex items-center">
+                  <i data-lucide="shield-check" class="w-4 h-4 mr-1 text-emerald-500"></i>
+                  Python Random Forest Model (Real Inference)
+                </span>
+                <button type="submit" id="btn-predict-submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-lg shadow-md shadow-blue-500/20 flex items-center space-x-2 transition-all">
+                  <i data-lucide="sparkles" class="w-4 h-4"></i>
+                  <span>Predict Churn Risk</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Right Column: Prediction Result Panel (5 cols) -->
+          <div class="lg:col-span-5 flex flex-col space-y-4">
+            <!-- Main Result Card -->
+            <div id="prediction-result-card" class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div class="flex items-center space-x-2">
+                    <span id="result-status-icon-wrap" class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      <i data-lucide="help-circle" class="w-5 h-5"></i>
+                    </span>
+                    <div>
+                      <h4 class="font-bold text-sm text-slate-900 dark:text-white">Prediction Outcome</h4>
+                      <p class="text-xs text-slate-500 dark:text-slate-400" id="result-model-name">Random Forest Classifier</p>
+                    </div>
+                  </div>
+                  <span id="result-risk-badge" class="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    Awaiting Input
+                  </span>
+                </div>
+
+                <!-- Probability Bar & Meter -->
+                <div class="my-5">
+                  <div class="flex items-center justify-between text-xs font-semibold mb-1.5">
+                    <span class="text-slate-700 dark:text-slate-300">Churn Probability</span>
+                    <span id="result-prob-percentage" class="text-base font-bold text-slate-900 dark:text-white">--%</span>
+                  </div>
+                  <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                    <div id="result-prob-bar" class="probability-bar-fill h-full w-0 bg-slate-400 rounded-full"></div>
+                  </div>
+                  <div class="flex justify-between text-[10px] text-slate-400 mt-1 font-mono">
+                    <span>0% (Safe)</span>
+                    <span>50% Threshold</span>
+                    <span>100% (Churn)</span>
+                  </div>
+                </div>
+
+                <!-- Explanation Box -->
+                <div id="result-explanation-box" class="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-300">
+                  Select customer attributes or load one of the documented demo profiles, then click <strong class="text-blue-600 dark:text-blue-400">Predict Churn Risk</strong> to run real model inference.
+                </div>
+
+                <!-- Key Risk Indicators -->
+                <div class="mt-4">
+                  <h5 class="text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2 flex items-center">
+                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5 mr-1 text-amber-500"></i>
+                    Identified Risk Indicators
+                  </h5>
+                  <ul id="result-risk-factors-list" class="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+                    <li class="flex items-start text-slate-400">
+                      <span class="mr-2">•</span>
+                      <span>No prediction generated yet.</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Retention Recommendations -->
+                <div class="mt-4">
+                  <h5 class="text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2 flex items-center">
+                    <i data-lucide="check-square" class="w-3.5 h-3.5 mr-1 text-emerald-500"></i>
+                    Targeted Retention Actions
+                  </h5>
+                  <ul id="result-recommendations-list" class="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+                    <li class="flex items-start text-slate-400">
+                      <span class="mr-2">•</span>
+                      <span>Recommendations will populate following model evaluation.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Customer Attributes Snapshot Footer -->
+              <div id="result-snapshot-footer" class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                <span>Evaluated Attributes: 10 Features</span>
+                <span id="result-eval-time" class="font-mono">--:--:--</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= EXTENDED MODEL FUNCTIONALITY OUTPUT PANELS ================= -->
+        <div id="predict-extended-results" class="mt-8 space-y-6 hidden">
+          <!-- Section Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+            <div>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center">
+                <i data-lucide="cpu" class="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400"></i>
+                Multi-Model Consensus & Regression Diagnostics
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                Direct visual outputs from every model trained in <code class="text-blue-600 dark:text-blue-400 font-mono text-[11px]">churn_app.py</code>: Phase 3 Classifiers, Support Calls Linear Regression, and Spend Expectancy.
+              </p>
+            </div>
+            <span id="predict-consensus-badge" class="self-start sm:self-auto px-3 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">
+              3/3 Consensus
+            </span>
+          </div>
+
+          <!-- 1. Multi-Model Classifier Consensus (Phase 3) -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Random Forest Card -->
+            <div class="p-4 rounded-xl border bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800 shadow-sm relative overflow-hidden">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Primary Classifier</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold">99.35% Acc</span>
+              </div>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white mb-1">Random Forest</h4>
+              <div class="flex items-baseline space-x-2 my-2">
+                <span id="mm-rf-prob" class="text-2xl font-black text-slate-900 dark:text-white">--%</span>
+                <span id="mm-rf-badge" class="px-2 py-0.5 text-xs font-bold rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">Pending</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                <div id="mm-rf-bar" class="h-full bg-blue-600 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">150 decision trees ensemble; selected benchmark production model.</p>
+            </div>
+
+            <!-- Decision Tree Card -->
+            <div class="p-4 rounded-xl border bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800 shadow-sm relative overflow-hidden">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Phase 3 Model</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-semibold">98.81% Acc</span>
+              </div>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white mb-1">Decision Tree</h4>
+              <div class="flex items-baseline space-x-2 my-2">
+                <span id="mm-dt-prob" class="text-2xl font-black text-slate-900 dark:text-white">--%</span>
+                <span id="mm-dt-badge" class="px-2 py-0.5 text-xs font-bold rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">Pending</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                <div id="mm-dt-bar" class="h-full bg-indigo-600 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Max depth 8 tree; rapid non-linear feature partitioning.</p>
+            </div>
+
+            <!-- Logistic Regression Card -->
+            <div class="p-4 rounded-xl border bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800 shadow-sm relative overflow-hidden">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Phase 3 Baseline</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-semibold">84.95% Acc</span>
+              </div>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white mb-1">Logistic Regression</h4>
+              <div class="flex items-baseline space-x-2 my-2">
+                <span id="mm-lr-prob" class="text-2xl font-black text-slate-900 dark:text-white">--%</span>
+                <span id="mm-lr-badge" class="px-2 py-0.5 text-xs font-bold rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">Pending</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2">
+                <div id="mm-lr-bar" class="h-full bg-amber-600 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">StandardScaler scaled linear log-odds decision boundary.</p>
+            </div>
+          </div>
+
+          <!-- 2. Dual Regression Row: Supplementary Regression & Spend Regression -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Supplementary Regression Card -->
+            <div class="p-5 rounded-xl border bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-950/60 flex items-center justify-center text-red-600 dark:text-red-400">
+                      <i data-lucide="line-chart" class="w-4 h-4"></i>
+                    </span>
+                    <div>
+                      <h4 class="font-bold text-xs text-slate-900 dark:text-white">Support Calls → Payment Delay Regression</h4>
+                      <span class="text-[10px] text-slate-500 font-mono">y ≈ 16.15 + 0.183 × x (Phase 3 Snippet)</span>
+                    </div>
+                  </div>
+                  <span id="supp-reg-status-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    Calculated
+                  </span>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-3 gap-2 mb-3 text-center">
+                  <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                    <span class="text-[10px] text-slate-500 block">Support Calls</span>
+                    <span id="supp-reg-calls" class="text-sm font-bold text-slate-900 dark:text-white font-mono">--</span>
+                  </div>
+                  <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                    <span class="text-[10px] text-slate-500 block">Projected Delay</span>
+                    <span id="supp-reg-pred" class="text-sm font-bold text-blue-600 dark:text-blue-400 font-mono">-- d</span>
+                  </div>
+                  <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                    <span class="text-[10px] text-slate-500 block">Actual / Variance</span>
+                    <span id="supp-reg-delta" class="text-sm font-bold text-slate-900 dark:text-white font-mono">--</span>
+                  </div>
+                </div>
+
+                <!-- Interactive Regression Canvas Plot -->
+                <div class="relative w-full h-44 bg-slate-50 dark:bg-slate-950 rounded-lg p-2 border border-slate-100 dark:border-slate-800">
+                  <canvas id="canvas-supp-regression" class="w-full h-full"></canvas>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-2 text-center">
+                  Regression slope: each additional call adds ~0.18 days delay. Red marker: active customer.
+                </p>
+              </div>
+            </div>
+
+            <!-- Total Spend Regression Card -->
+            <div class="p-5 rounded-xl border bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                      <i data-lucide="badge-dollar-sign" class="w-4 h-4"></i>
+                    </span>
+                    <div>
+                      <h4 class="font-bold text-xs text-slate-900 dark:text-white">Total Spend Expectancy Regression</h4>
+                      <span class="text-[10px] text-slate-500">Phase 3 Multi-feature Spend Analysis</span>
+                    </div>
+                  </div>
+                  <span id="spend-reg-status-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    Profile Expected
+                  </span>
+                </div>
+
+                <!-- Spend Breakdown Grid -->
+                <div class="grid grid-cols-3 gap-2 mb-3 text-center">
+                  <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                    <span class="text-[10px] text-slate-500 block">Entered Spend</span>
+                    <span id="spend-reg-actual" class="text-sm font-bold text-slate-900 dark:text-white font-mono">$--</span>
+                  </div>
+                  <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                    <span class="text-[10px] text-slate-500 block">Expected Spend</span>
+                    <span id="spend-reg-pred" class="text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">$--</span>
+                  </div>
+                  <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                    <span class="text-[10px] text-slate-500 block">Spend Residual</span>
+                    <span id="spend-reg-delta" class="text-sm font-bold text-slate-900 dark:text-white font-mono">--</span>
+                  </div>
+                </div>
+
+                <!-- Explanation statement -->
+                <div id="spend-reg-explanation" class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
+                  Spend expectancy evaluated from Age, Tenure, Contract, and Usage frequency regression coefficients.
+                </div>
+              </div>
+
+              <!-- Feature Impact Breakdown Horizontal Bar -->
+              <div class="mt-3">
+                <h5 class="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center justify-between">
+                  <span>Customer Attribute Risk Decomposition</span>
+                  <span class="text-[10px] text-slate-400">Random Forest Importance</span>
+                </h5>
+                <div class="w-full h-36">
+                  <canvas id="chart-feature-impacts"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PAGE 3: CUSTOMER EXPLORER ================= -->
+      <section id="view-explorer" class="page-view hidden space-y-6">
+        <!-- Controls Bar -->
+        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800 space-y-3">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <!-- Search Control -->
+            <div class="relative flex-1 max-w-md">
+              <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input type="text" id="explorer-search-input" placeholder="Search CustomerID or properties..."
+                     class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center space-x-2">
+              <button id="explorer-load-sample-btn" class="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors flex items-center space-x-1.5 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-900">
+                <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i>
+                <span>Load Benchmark Records (300)</span>
+              </button>
+              <button id="explorer-export-csv-btn" class="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center space-x-1.5 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+                <i data-lucide="file-spreadsheets" class="w-3.5 h-3.5"></i>
+                <span>Export Filtered CSV</span>
+              </button>
+              <button id="explorer-reset-filters-btn" class="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800">
+                Clear Filters
+              </button>
+            </div>
+          </div>
+
+          <!-- Multi-column Filters -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-0.5">Churn Status</label>
+              <select id="filter-churn-status" class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                <option value="all">All Statuses</option>
+                <option value="0">Retained (0)</option>
+                <option value="1">Churned (1)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-0.5">Subscription Type</label>
+              <select id="filter-sub-type" class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                <option value="all">All Tiers</option>
+                <option value="Basic">Basic</option>
+                <option value="Standard">Standard</option>
+                <option value="Premium">Premium</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-0.5">Contract Length</label>
+              <select id="filter-contract-length" class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                <option value="all">All Lengths</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="Annual">Annual</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-0.5">Predicted Risk</label>
+              <select id="filter-risk-category" class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                <option value="all">All Risk Levels</option>
+                <option value="High Risk">High Risk</option>
+                <option value="Low Risk">Low Risk</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-500 mb-0.5">Rows Per Page</label>
+              <select id="table-page-size" class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                <option value="10">10 Rows</option>
+                <option value="25" selected>25 Rows</option>
+                <option value="50">50 Rows</option>
+                <option value="100">100 Rows</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer Records Table -->
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800 flex flex-col">
+          <div class="overflow-x-auto min-h-[400px]">
+            <table class="w-full text-left text-xs" id="customer-explorer-table">
+              <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px] dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700">
+                <tr>
+                  <th class="px-3 py-3 sortable" data-col="CustomerID">Customer ID <i data-lucide="chevrons-up-down" class="inline w-3 h-3 text-slate-400"></i></th>
+                  <th class="px-3 py-3 sortable" data-col="Age">Age <i data-lucide="chevrons-up-down" class="inline w-3 h-3 text-slate-400"></i></th>
+                  <th class="px-3 py-3 sortable" data-col="Gender">Gender <i data-lucide="chevrons-up-down" class="inline w-3 h-3 text-slate-400"></i></th>
+                  <th class="px-3 py-3 sortable" data-col="Tenure">Tenure <i data-lucide="chevrons-up-down" class="inline w-3 h-3 text-slate-400"></i></th>
+                  <th class="px-3 py-3 sortable" data-col="Usage Frequency">Usage <i data-lucide="chevrons-up-down" class="inline w-3 h-3 text-slate-400"></i></th>
+                  <th class="px-3 py-3 sortable" data-col="Support Calls">Support <i data-lucide="chevrons-up-down" class="inline w-3 h-3 text-slate-400"></i></th>
+                  <th class="px-3 py-3 sortable" data-col="Payment Delay">Delay <i data-lucide="chevrons-up-down" class="inline w-3 h-3 text-slate-400"></i></th>
+                  <th class="px-3 py-3 sortable" data-col="Subscription Type">Tier <i data-lucide="chevrons-up-down" class="inline w-3 h-3 text-slate-400"></i></th>
+                  <th class="px-3 py-3 sortable" data-col="Contract Length">Contract <i data-lucide="chevrons-up-down" class="inline w-3 h-3 text-slate-400"></i></th>
+                  <th class="px-3 py-3 sortable" data-col="Total Spend">Spend ($) <i data-lucide="chevrons-up-down" class="inline w-3 h-3 text-slate-400"></i></th>
+                  <th class="px-3 py-3 sortable" data-col="Last Interaction">Last Int <i data-lucide="chevrons-up-down" class="inline w-3 h-3 text-slate-400"></i></th>
+                  <th class="px-3 py-3 sortable" data-col="Churn">Status <i data-lucide="chevrons-up-down" class="inline w-3 h-3 text-slate-400"></i></th>
+                  <th class="px-3 py-3 sortable" data-col="churn_probability">Model Risk <i data-lucide="chevrons-up-down" class="inline w-3 h-3 text-slate-400"></i></th>
+                  <th class="px-3 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="explorer-tbody" class="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800 dark:text-slate-300">
+                <!-- Dynamically populated via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs dark:bg-slate-900 dark:border-slate-800">
+            <div class="text-slate-500 dark:text-slate-400" id="pagination-info">
+              Showing <span class="font-bold text-slate-700 dark:text-slate-200">1</span> to <span class="font-bold text-slate-700 dark:text-slate-200">25</span> of <span class="font-bold text-slate-700 dark:text-slate-200">0</span> records
+            </div>
+            <div class="flex items-center space-x-1" id="pagination-controls">
+              <!-- Dynamically populated pagination buttons -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PAGE 4: CHURN ANALYTICS ================= -->
+      <section id="view-analytics" class="page-view hidden space-y-6">
+        <!-- Analytics Header & Filter Toolbar -->
+        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900 dark:text-white">Exploratory Churn Analytics</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Analyze churn propensity across demographic segments and behavioral dimensions</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-xs text-slate-500 dark:text-slate-400 mr-1">Filter dataset:</span>
+              <select id="analytics-filter-tier" class="px-2.5 py-1 text-xs bg-slate-50 border border-slate-200 rounded-lg dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                <option value="all">All Tiers</option>
+                <option value="Basic">Basic</option>
+                <option value="Standard">Standard</option>
+                <option value="Premium">Premium</option>
+              </select>
+              <select id="analytics-filter-contract" class="px-2.5 py-1 text-xs bg-slate-50 border border-slate-200 rounded-lg dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                <option value="all">All Contracts</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="Annual">Annual</option>
+              </select>
+              <button id="analytics-apply-btn" class="px-3 py-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                Apply Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Analytics Charts Grid 1: Churn Rates by Dimension -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- 1: Rate by Tier -->
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-2">Churn Rate by Tier</h4>
+            <div class="h-44 relative">
+              <canvas id="chart-an-tier"></canvas>
+            </div>
+          </div>
+
+          <!-- 2: Rate by Contract -->
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-2">Churn Rate by Contract</h4>
+            <div class="h-44 relative">
+              <canvas id="chart-an-contract"></canvas>
+            </div>
+          </div>
+
+          <!-- 3: Rate by Age Group -->
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-2">Churn Rate by Age Cohort</h4>
+            <div class="h-44 relative">
+              <canvas id="chart-an-age"></canvas>
+            </div>
+          </div>
+
+          <!-- 4: Rate by Tenure Group -->
+          <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-2">Churn Rate by Tenure</h4>
+            <div class="h-44 relative">
+              <canvas id="chart-an-tenure"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Analytics Charts Grid 2: Key Operational Dimensions -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Support Calls vs Churn -->
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Support Call Volume vs Churn Propensity</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Churn rate steepens dramatically past 4 calls</p>
+              </div>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400">High Impact</span>
+            </div>
+            <div class="h-64 relative">
+              <canvas id="chart-an-support"></canvas>
+            </div>
+          </div>
+
+          <!-- Payment Delay vs Churn -->
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Payment Delay Duration vs Churn Rate</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Delays past 15 days strongly correlate with contract termination</p>
+              </div>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400">Financial Risk</span>
+            </div>
+            <div class="h-64 relative">
+              <canvas id="chart-an-delay"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Analytics Row 3: Feature Importance & Usage Frequency -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Feature Importance Bar Chart (7 cols) -->
+          <div class="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Random Forest Model Feature Importances</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Reported impurity decrease across all 150 estimators</p>
+              </div>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">Scikit-Learn</span>
+            </div>
+            <div class="h-72 relative">
+              <canvas id="chart-an-importance"></canvas>
+            </div>
+          </div>
+
+          <!-- Usage Frequency vs Total Spend vs Churn (5 cols) -->
+          <div class="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <h4 class="font-bold text-sm text-slate-900 dark:text-white">Usage Frequency vs Churn</h4>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">Engagement impact on retention</p>
+                </div>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">EDA Finding</span>
+              </div>
+              <div class="h-60 relative">
+                <canvas id="chart-an-usage"></canvas>
+              </div>
+            </div>
+            <div class="p-3 mt-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+              <strong class="text-slate-900 dark:text-white">EDA Synthesis:</strong> Higher usage frequency and total spend exhibited weak negative correlations with churn, whereas payment delays and customer support contacts presented positive associations.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PAGE 5: MODEL PERFORMANCE ================= -->
+      <section id="view-performance" class="page-view hidden space-y-6">
+        <!-- Model Header & Final Model Highlights -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-4 dark:border-slate-800">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900 dark:text-white">Classification Model Comparison & Verification</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Official metrics recorded during model training on the consolidated 442,211 customer dataset.
+              </p>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="text-right">
+                <span class="text-xs text-slate-500">Selected Model</span>
+                <div class="text-base font-bold text-slate-900 dark:text-white">Random Forest Classifier</div>
+              </div>
+              <div class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
+                99.35%
+              </div>
+            </div>
+          </div>
+
+          <!-- Official Model Comparison Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px] dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                <tr>
+                  <th class="px-4 py-3">Evaluated Algorithm</th>
+                  <th class="px-4 py-3">Accuracy</th>
+                  <th class="px-4 py-3">Precision</th>
+                  <th class="px-4 py-3">Recall</th>
+                  <th class="px-4 py-3">F1-Score</th>
+                  <th class="px-4 py-3">Status / Role</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-slate-700 dark:divide-slate-800 dark:text-slate-300 font-mono">
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                  <td class="px-4 py-3 font-sans font-semibold text-slate-900 dark:text-white flex items-center">
+                    <span class="w-2.5 h-2.5 rounded-full bg-slate-400 mr-2"></span>
+                    Logistic Regression
+                  </td>
+                  <td class="px-4 py-3">84.95%</td>
+                  <td class="px-4 py-3">0.8777</td>
+                  <td class="px-4 py-3">0.8538</td>
+                  <td class="px-4 py-3">0.8656</td>
+                  <td class="px-4 py-3 font-sans"><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Baseline</span></td>
+                </tr>
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                  <td class="px-4 py-3 font-sans font-semibold text-slate-900 dark:text-white flex items-center">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500 mr-2"></span>
+                    Decision Tree
+                  </td>
+                  <td class="px-4 py-3">98.81%</td>
+                  <td class="px-4 py-3">0.9981</td>
+                  <td class="px-4 py-3">0.9808</td>
+                  <td class="px-4 py-3">0.9894</td>
+                  <td class="px-4 py-3 font-sans"><span class="px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">Candidate</span></td>
+                </tr>
+                <tr class="bg-emerald-50/60 dark:bg-emerald-950/20 font-semibold border-l-4 border-emerald-500">
+                  <td class="px-4 py-3 font-sans font-bold text-emerald-950 dark:text-emerald-300 flex items-center">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span>
+                    Random Forest (Selected)
+                  </td>
+                  <td class="px-4 py-3 text-emerald-700 dark:text-emerald-400 font-bold">99.35%</td>
+                  <td class="px-4 py-3 text-emerald-700 dark:text-emerald-400 font-bold">0.9981</td>
+                  <td class="px-4 py-3 text-emerald-700 dark:text-emerald-400 font-bold">0.9905</td>
+                  <td class="px-4 py-3 text-emerald-700 dark:text-emerald-400 font-bold">0.9943</td>
+                  <td class="px-4 py-3 font-sans"><span class="px-2 py-0.5 rounded-full bg-emerald-600 text-white font-bold text-[10px]">Production Final</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-3 text-[11px] text-slate-500 dark:text-slate-400 italic">
+            Note: All displayed classification metrics are recorded project report values from Phase 3 and Phase 4 evaluation on test partitions.
+          </div>
+        </div>
+
+        <!-- Visual Comparisons: Chart & Confusion Matrix -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Metric Comparison Bar Chart (7 cols) -->
+          <div class="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+            <h4 class="font-bold text-sm text-slate-900 dark:text-white mb-1">Comparative Model Performance</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Multi-metric comparison: Accuracy, Precision, Recall, and F1-Score</p>
+            <div class="h-64 relative">
+              <canvas id="chart-perf-comparison"></canvas>
+            </div>
+          </div>
+
+          <!-- Confusion Matrix Card (5 cols) -->
+          <div class="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Random Forest Confusion Matrix</h4>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">Test Split</span>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Normalized test distribution on 88,443 evaluation rows</p>
+
+              <!-- 2x2 Confusion Matrix Grid -->
+              <div class="grid grid-cols-2 gap-3 text-center">
+                <!-- True Negative -->
+                <div class="p-3 rounded-lg bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800">
+                  <span class="block text-[11px] uppercase tracking-wider font-semibold text-emerald-800 dark:text-emerald-300">True Negatives (TN)</span>
+                  <span class="block text-lg font-bold text-emerald-700 dark:text-emerald-400 font-mono my-0.5">46,842</span>
+                  <span class="text-[10px] text-emerald-600 dark:text-emerald-400">Correctly identified retained</span>
+                </div>
+
+                <!-- False Positive -->
+                <div class="p-3 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-800">
+                  <span class="block text-[11px] uppercase tracking-wider font-semibold text-amber-800 dark:text-amber-300">False Positives (FP)</span>
+                  <span class="block text-lg font-bold text-amber-700 dark:text-amber-400 font-mono my-0.5">80</span>
+                  <span class="text-[10px] text-amber-600 dark:text-amber-400">Unnecessary retention offer</span>
+                </div>
+
+                <!-- False Negative -->
+                <div class="p-3 rounded-lg bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-800">
+                  <span class="block text-[11px] uppercase tracking-wider font-semibold text-red-800 dark:text-red-300">False Negatives (FN)</span>
+                  <span class="block text-lg font-bold text-red-700 dark:text-red-400 font-mono my-0.5">395</span>
+                  <span class="text-[10px] text-red-600 dark:text-red-400">High risk: undetected churn</span>
+                </div>
+
+                <!-- True Positive -->
+                <div class="p-3 rounded-lg bg-blue-50 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-800">
+                  <span class="block text-[11px] uppercase tracking-wider font-semibold text-blue-800 dark:text-blue-300">True Positives (TP)</span>
+                  <span class="block text-lg font-bold text-blue-700 dark:text-blue-400 font-mono my-0.5">41,126</span>
+                  <span class="text-[10px] text-blue-600 dark:text-blue-400">Correctly intercepted churn</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Business Impact Explanation -->
+            <div class="p-3 mt-4 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+              <strong class="text-slate-900 dark:text-white">Business trade-off:</strong> In churn prediction, <em>False Negatives</em> (missing a churner) are substantially more costly than <em>False Positives</em> (offering a retention perk to a loyal customer). Random Forest achieved 99.05% recall, minimizing missed customer exits.
+            </div>
+          </div>
+        </div>
+
+        <!-- Separate Section: Total Spend Regression Task -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">Phase 3 Task</span>
+                <h3 class="font-bold text-sm text-slate-900 dark:text-white">Total Spend Regression Analysis</h3>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Continuous monetary value estimation on customer lifetime expenditure</p>
+            </div>
+            <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800">
+              Limited Explanatory Power
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px] dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                  <tr>
+                    <th class="px-3 py-2.5">Regression Model</th>
+                    <th class="px-3 py-2.5">MAE ($)</th>
+                    <th class="px-3 py-2.5">RMSE ($)</th>
+                    <th class="px-3 py-2.5">R² Score</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 font-mono text-slate-700 dark:divide-slate-800 dark:text-slate-300">
+                  <tr>
+                    <td class="px-3 py-2.5 font-sans font-medium text-slate-900 dark:text-white">Linear Regression</td>
+                    <td class="px-3 py-2.5">$181.94</td>
+                    <td class="px-3 py-2.5">$217.58</td>
+                    <td class="px-3 py-2.5">0.1859</td>
+                  </tr>
+                  <tr class="bg-blue-50/50 dark:bg-blue-950/20 font-semibold">
+                    <td class="px-3 py-2.5 font-sans font-medium text-blue-900 dark:text-blue-300">Random Forest Regressor</td>
+                    <td class="px-3 py-2.5 text-blue-700 dark:text-blue-400">$179.39</td>
+                    <td class="px-3 py-2.5 text-blue-700 dark:text-blue-400">$215.16</td>
+                    <td class="px-3 py-2.5 text-blue-700 dark:text-blue-400">0.2040</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2 dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-300">
+              <p><strong class="text-slate-900 dark:text-white">Methodological Clarity:</strong> The project documents describe the Total Spend regression task as having low explanatory power (R² ~ 0.20), showing that demographic and engagement features explain only a fifth of monetary expenditure variation.</p>
+              <p class="text-slate-500 dark:text-slate-400 text-[11px]">Notice: This regression task is distinct from churn prediction and is documented solely for project completeness. It does not predict churn status.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Model Metadata & Hyperparameters Card -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+          <h4 class="font-bold text-sm text-slate-900 dark:text-white mb-4">Production Model Specifications & Artifacts</h4>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+              <span class="block text-slate-500 text-[10px] uppercase font-semibold">Algorithm</span>
+              <span class="font-bold text-slate-900 dark:text-white mt-0.5 block">Random Forest</span>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+              <span class="block text-slate-500 text-[10px] uppercase font-semibold">Estimators</span>
+              <span class="font-bold text-slate-900 dark:text-white mt-0.5 block font-mono">150 Trees</span>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+              <span class="block text-slate-500 text-[10px] uppercase font-semibold">Max Depth</span>
+              <span class="font-bold text-slate-900 dark:text-white mt-0.5 block font-mono">10 Levels</span>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+              <span class="block text-slate-500 text-[10px] uppercase font-semibold">Random State</span>
+              <span class="font-bold text-slate-900 dark:text-white mt-0.5 block font-mono">42</span>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+              <span class="block text-slate-500 text-[10px] uppercase font-semibold">Trained Rows</span>
+              <span class="font-bold text-slate-900 dark:text-white mt-0.5 block font-mono">442,211</span>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+              <span class="block text-slate-500 text-[10px] uppercase font-semibold">Model Artifact</span>
+              <span class="font-bold text-blue-600 dark:text-blue-400 mt-0.5 block font-mono">churn_model.pkl</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PAGE 6: DATA MANAGEMENT ================= -->
+      <section id="view-data" class="page-view hidden space-y-6">
+        <!-- CSV Upload Zone -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900 dark:text-white">Customer CSV Dataset Management</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Upload, audit, validate, and batch-evaluate telecom customer files</p>
+            </div>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              12-Column Schema
+            </span>
+          </div>
+
+          <!-- Drag and drop zone -->
+          <div id="csv-dropzone" class="dropzone border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer transition-all hover:border-blue-500 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/40">
+            <input type="file" id="csv-file-input" accept=".csv" class="hidden">
+            <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3 dark:bg-blue-950 dark:text-blue-400">
+              <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Click to select or drag and drop customer CSV file</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Supports UTF-8 CSV datasets up to 100,000+ records via Papa Parse</p>
+            <div class="mt-4 flex items-center justify-center space-x-2 text-[11px] text-slate-400">
+              <span>Required columns:</span>
+              <code class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 dark:bg-slate-800 dark:text-slate-300">CustomerID, Age, Gender, Tenure, Usage Frequency, Support Calls, Payment Delay, Subscription Type, Contract Length, Total Spend, Last Interaction, Churn</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Quality & Cleaning Audit Summary -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center">
+              <i data-lucide="check-circle-2" class="w-4 h-4 mr-2 text-blue-600"></i>
+              Dataset Validation & Integrity Audit
+            </h3>
+            <div class="flex items-center space-x-2">
+              <button id="btn-export-cleaned-csv" class="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center space-x-1 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>Export Cleaned CSV</span>
+              </button>
+              <button id="btn-apply-cleaned-data" class="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center space-x-1 shadow-sm">
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                <span>Apply to Workspace</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Audit Metrics Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+              <span class="block text-[11px] text-slate-500 font-medium">Total Rows Loaded</span>
+              <span class="text-xl font-bold text-slate-900 dark:text-white font-mono" id="audit-total-rows">64,374</span>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+              <span class="block text-[11px] text-slate-500 font-medium">Missing Values</span>
+              <span class="text-xl font-bold text-amber-600 dark:text-amber-400 font-mono" id="audit-missing-rows">0</span>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+              <span class="block text-[11px] text-slate-500 font-medium">Duplicate Records</span>
+              <span class="text-xl font-bold text-amber-600 dark:text-amber-400 font-mono" id="audit-duplicate-rows">0</span>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+              <span class="block text-[11px] text-slate-500 font-medium">Invalid Field Values</span>
+              <span class="text-xl font-bold text-red-600 dark:text-red-400 font-mono" id="audit-invalid-rows">0</span>
+            </div>
+            <div class="p-3 rounded-lg bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800">
+              <span class="block text-[11px] text-emerald-800 dark:text-emerald-300 font-medium">Clean Valid Records</span>
+              <span class="text-xl font-bold text-emerald-700 dark:text-emerald-400 font-mono" id="audit-valid-rows">64,374</span>
+            </div>
+          </div>
+
+          <!-- Dataset Preview Table -->
+          <div>
+            <span class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Dataset Schema Preview (First 5 Rows)</span>
+            <div class="overflow-x-auto border border-slate-200 rounded-lg dark:border-slate-700">
+              <table class="w-full text-left text-xs font-mono" id="preview-table">
+                <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 text-[11px] dark:bg-slate-800 dark:text-slate-300">
+                  <tr id="preview-thead-tr">
+                    <!-- Populated dynamically -->
+                  </tr>
+                </thead>
+                <tbody id="preview-tbody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Batch Prediction Engine -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800 space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">Backend Integration</span>
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Batch Churn Prediction</h3>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Execute the Python Random Forest model over all loaded customer records</p>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button id="btn-run-batch-predict" class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-all flex items-center space-x-1.5">
+                <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                <span>Run Batch Predictions</span>
+              </button>
+              <button id="btn-download-batch-csv" class="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center space-x-1.5 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>Download Predictions CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Batch Progress Bar -->
+          <div id="batch-progress-wrapper" class="hidden space-y-1.5">
+            <div class="flex justify-between text-xs font-medium">
+              <span class="text-slate-600 dark:text-slate-300" id="batch-progress-label">Computing predictions...</span>
+              <span class="font-mono text-slate-900 dark:text-white" id="batch-progress-percent">0%</span>
+            </div>
+            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden dark:bg-slate-800">
+              <div id="batch-progress-bar" class="h-full w-0 bg-blue-600 transition-all duration-300"></div>
+            </div>
+          </div>
+
+          <!-- Batch Results Summary -->
+          <div id="batch-results-summary" class="hidden grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+              <span class="block text-[11px] text-slate-500 font-medium">Total Evaluated</span>
+              <span class="text-lg font-bold text-slate-900 dark:text-white font-mono" id="batch-sum-total">0</span>
+            </div>
+            <div class="p-3 rounded-lg bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-800">
+              <span class="block text-[11px] text-red-800 dark:text-red-300 font-medium">Predicted Churn</span>
+              <span class="text-lg font-bold text-red-700 dark:text-red-400 font-mono" id="batch-sum-churn">0</span>
+            </div>
+            <div class="p-3 rounded-lg bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800">
+              <span class="block text-[11px] text-emerald-800 dark:text-emerald-300 font-medium">Predicted Retained</span>
+              <span class="text-lg font-bold text-emerald-700 dark:text-emerald-400 font-mono" id="batch-sum-retained">0</span>
+            </div>
+            <div class="p-3 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-800">
+              <span class="block text-[11px] text-amber-800 dark:text-amber-300 font-medium">Batch Churn Rate</span>
+              <span class="text-lg font-bold text-amber-700 dark:text-amber-400 font-mono" id="batch-sum-rate">0%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+
+    </main>
+  </div>
+
+  <!-- ================= Customer Detail Modal ================= -->
+  <div id="customer-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-900 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center dark:bg-blue-950 dark:text-blue-400">
+            <i data-lucide="user" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-slate-900 dark:text-white" id="modal-cust-id">CUST-00000</h3>
+            <p class="text-xs text-slate-500">Customer Profile & Risk Assessment</p>
+          </div>
+        </div>
+        <button id="modal-close-btn" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="py-4 space-y-4">
+        <!-- Status & Probability Banner -->
+        <div class="p-3 rounded-xl flex items-center justify-between" id="modal-status-banner">
+          <div>
+            <span class="block text-[11px] font-semibold text-slate-500 uppercase">Model Assessment</span>
+            <span class="font-bold text-base" id="modal-risk-label">High Risk</span>
+          </div>
+          <div class="text-right">
+            <span class="block text-[11px] font-semibold text-slate-500 uppercase">Churn Probability</span>
+            <span class="font-mono font-bold text-base" id="modal-churn-prob">99.8%</span>
+          </div>
+        </div>
+
+        <!-- 10 Features Grid -->
+        <div class="grid grid-cols-2 gap-2 text-xs" id="modal-attributes-grid">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Retention Recommendation -->
+        <div class="p-3 rounded-lg bg-blue-50/50 border border-blue-100 text-xs text-blue-900 dark:bg-blue-950/30 dark:border-blue-900 dark:text-blue-300">
+          <strong class="block mb-1 font-semibold">Recommended Follow-up:</strong>
+          <span id="modal-recommendation-text">Propose an incentive to transition to an Annual subscription.</span>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+        <button id="modal-dismiss-btn" class="px-4 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg dark:bg-slate-800 dark:text-slate-300">
+          Close Window
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Project Information Modal ================= -->
+  <div id="project-info-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-900 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center">
+            <i data-lucide="info" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-slate-900 dark:text-white">Customer Churn Prediction Project</h3>
+            <p class="text-xs text-slate-500">Engineering Documentation & Source of Truth</p>
+          </div>
+        </div>
+        <button id="project-info-close-btn" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="py-4 space-y-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+        <div>
+          <h4 class="font-bold text-sm text-slate-900 dark:text-white mb-1">Architecture & ML Workflow</h4>
+          <p>
+            This application is the official modern web interface for the Customer Churn Prediction System. Model inference is executed via a Python REST service loaded with the serialized Phase 4 Random Forest model (<code class="text-blue-600 dark:text-blue-400 font-mono">churn_model.pkl</code>) and categorical encoders.
+          </p>
+        </div>
+
+        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+          <span class="font-bold text-slate-900 dark:text-white block mb-1">Dataset Reference Numbers:</span>
+          <ul class="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-300">
+            <li><strong>Phase 2 Testing Dataset:</strong> 64,374 customer records (30,493 churned, 33,881 retained).</li>
+            <li><strong>Phases 3 & 4 Consolidated Modelling Dataset:</strong> 442,211 unique customer records.</li>
+            <li><strong>Selected Model:</strong> Random Forest Classifier (150 estimators, max depth 10, random state 42).</li>
+            <li><strong>Reported Test Accuracy:</strong> 99.35% (Precision: 0.9981, Recall: 0.9905, F1: 0.9943).</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-sm text-slate-900 dark:text-white mb-1">GitHub Repository</h4>
+          <a href="https://github.com/Caleb-the-exotic/Customer_Churn_IBM" target="_blank" rel="noopener noreferrer"
+             class="text-blue-600 dark:text-blue-400 underline font-mono">
+            https://github.com/Caleb-the-exotic/Customer_Churn_IBM
+          </a>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+        <button id="project-info-dismiss-btn" class="px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+          Got it
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Lightfall WebGL Shader Component -->
+  <script src="lightfall.js"></script>
+  <!-- Application Logic JavaScript -->
+  <script src="script.js"></script>
+</body>
+</html>

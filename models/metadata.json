@@ -1,0 +1,37 @@
+{
+  "algorithm": "Random Forest Classifier",
+  "n_estimators": 150,
+  "max_depth": 10,
+  "random_state": 42,
+  "accuracy": 0.9935438644098459,
+  "precision": 0.9980727148621791,
+  "recall": 0.9905359633393106,
+  "f1": 0.994290057099429,
+  "records_trained": 442211,
+  "feature_importances": {
+    "Age": 14.91,
+    "Gender": 3.54,
+    "Tenure": 0.34,
+    "Usage Frequency": 0.14,
+    "Support Calls": 32.68,
+    "Payment Delay": 14.24,
+    "Subscription Type": 0.03,
+    "Contract Length": 7.53,
+    "Total Spend": 22.74,
+    "Last Interaction": 3.85
+  },
+  "gender_classes": [
+    "Female",
+    "Male"
+  ],
+  "subscription_classes": [
+    "Basic",
+    "Premium",
+    "Standard"
+  ],
+  "contract_classes": [
+    "Annual",
+    "Monthly",
+    "Quarterly"
+  ]
+}

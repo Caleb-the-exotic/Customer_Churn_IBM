@@ -1,0 +1,218 @@
+/* ==========================================================================
+   Customer Churn Prediction System — Custom Design System & Enhancements
+   Extends Tailwind CSS with curated SaaS BI tokens, transitions, and charts.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Primary Deep Navy */
+  --color-primary: #0F172A;
+  --color-primary-light: #1E293B;
+  --color-accent: #2563EB;
+  --color-accent-hover: #1D4ED8;
+
+  /* Status Colors */
+  --risk-high: #DC2626;
+  --risk-high-bg: #FEF2F2;
+  --risk-high-border: #FCA5A5;
+
+  --risk-medium: #D97706;
+  --risk-medium-bg: #FFFBEB;
+  --risk-medium-border: #FCD34D;
+
+  --risk-low: #16A34A;
+  --risk-low-bg: #F0FDF4;
+  --risk-low-border: #86EFAC;
+
+  /* Surface */
+  --surface-bg: #F8FAFC;
+  --surface-card: #FFFFFF;
+  --surface-border: #E2E8F0;
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+}
+
+/* Dark theme variables */
+.dark {
+  --surface-bg: #0B0F19;
+  --surface-card: #111827;
+  --surface-border: #1F2937;
+  --text-main: #F9FAFB;
+  --text-muted: #9CA3AF;
+  --color-primary: #030712;
+  --color-primary-light: #111827;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--surface-bg);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #374151;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Active navigation item styling */
+.nav-link.active {
+  background-color: #1E293B;
+  color: #FFFFFF;
+  font-weight: 600;
+}
+.nav-link.active .nav-icon {
+  color: #38BDF8;
+}
+
+/* Risk Badges */
+.badge-risk-high {
+  background-color: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+}
+.dark .badge-risk-high {
+  background-color: rgba(220, 38, 38, 0.2);
+  color: #F87171;
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+.badge-risk-low {
+  background-color: #F0FDF4;
+  color: #16A34A;
+  border: 1px solid #BBF7D0;
+}
+.dark .badge-risk-low {
+  background-color: rgba(22, 163, 74, 0.2);
+  color: #4ADE80;
+  border-color: rgba(22, 163, 74, 0.3);
+}
+
+.badge-risk-medium {
+  background-color: #FFFBEB;
+  color: #D97706;
+  border: 1px solid #FDE68A;
+}
+.dark .badge-risk-medium {
+  background-color: rgba(217, 119, 6, 0.2);
+  color: #FBBF24;
+  border-color: rgba(217, 119, 6, 0.3);
+}
+
+/* Animated Probability Meter */
+.probability-bar-fill {
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s ease;
+}
+
+/* Pulse animation for live connection indicator */
+@keyframes livePulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+.pulse-indicator-live {
+  animation: livePulse 2s infinite;
+}
+
+/* Correlation Heatmap cell styling */
+.heatmap-cell {
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.heatmap-cell:hover {
+  transform: scale(1.05);
+  z-index: 10;
+  filter: brightness(1.1);
+}
+
+/* Toast container styling */
+#toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+.toast-msg {
+  pointer-events: auto;
+  min-width: 320px;
+  max-width: 440px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  animation: toastSlideIn 0.3s ease-out forwards;
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastFadeOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Dropzone drag active */
+.dropzone.dragover {
+  border-color: #2563EB !important;
+  background-color: rgba(37, 99, 235, 0.05) !important;
+}
+
+/* Table sort icons */
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+th.sortable:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+.dark th.sortable:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Code block typography */
+code, pre {
+  font-family: var(--font-mono);
+}
